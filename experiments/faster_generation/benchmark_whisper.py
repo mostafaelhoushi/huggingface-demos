@@ -8,7 +8,7 @@ from utils import get_mismatches, get_parsed_args, run_model, run_model_with_ass
 TORCH_DEVICE = 0
 
 
-def run_prediction_loop(model, processor, num_samples, temperature=None, assistant_model=None, assistant_tokenizer=None):
+def run_prediction_loop(model, processor, num_samples, temperature=None, assistant_model=None, assistant_early_exit=None, assistant_tokenizer=None):
     outputs = []
     gen_time = []
     num_tokens = []
@@ -16,7 +16,7 @@ def run_prediction_loop(model, processor, num_samples, temperature=None, assista
     ds = load_dataset("librispeech_asr", "clean", split="validation")
     speech_samples = ds.select(range(num_samples))[:num_samples]["audio"]
 
-    desc = "ORIGINAL model" if assistant_model is None else f"ASSISTED model"
+    desc = "ORIGINAL model" if assistant_model is None and assistant_early_exit is None else f"ASSISTED model"
     pbar = tqdm(range(num_samples), desc)
 
     for i in pbar:
@@ -32,6 +32,7 @@ def run_prediction_loop(model, processor, num_samples, temperature=None, assista
             "do_sample": False,
             "temperature": temperature,
             "assistant_model": assistant_model,
+            "assistant_early_exit"=assistant_early_exit,
         }
         if temperature is not None:
             generate_kwargs["do_sample"] = True

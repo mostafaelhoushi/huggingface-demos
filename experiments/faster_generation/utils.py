@@ -24,6 +24,7 @@ def get_parsed_args():
     )
     parser.add_argument('model', type=str, help='The HF repo of the *main* model to be used')
     parser.add_argument('--aux-model', type=str, default=None, help='The HF repo of the *assistant* model to be used')
+    parser.add_argument('--aux-early-exit', type=int, default=None, help='The layer of *assistant* early exit to be used')
     parser.add_argument('--dtype', type=str, default=None, help='The data type to be used in BOTH models')
     parser.add_argument(
         '--temperature', type=float, help='The temperature value for sampling. If not set, greedy decoding is used.'
@@ -84,12 +85,17 @@ def run_model(args, processor_cls, model_cls, run_prediction_loop):
 
 
 def run_model_with_assistant(args, processor_cls, model_cls, run_prediction_loop):
+    assert args.aux_model is not None or args.aux_early_exit is not None
     tokenizer = processor_cls.from_pretrained(args.model)
 
-    assistant_model = model_cls.from_pretrained(args.aux_model)
-    assistant_model = assistant_model.to(device=TORCH_DEVICE, dtype=args.dtype)
-    if assistant_model.generation_config.pad_token_id is None:
-        assistant_model.generation_config.pad_token_id = assistant_model.generation_config.eos_token_id
+    if args.aux_model:
+        assistant_model = model_cls.from_pretrained(args.aux_model)
+        assistant_model = assistant_model.to(device=TORCH_DEVICE, dtype=args.dtype)
+        if assistant_model.generation_config.pad_token_id is None:
+            assistant_model.generation_config.pad_token_id = assistant_model.generation_config.eos_token_id
+    else:
+        assistant_model = None
+    assistant_early_exit = args.aux_early_exit
 
     if args.max_gpu_memory is None:  # fails if it doesn't fit in a GPU
         max_memory = {0: "100GiB", "cpu": "0GiB"}
@@ -129,6 +135,7 @@ def run_model_with_assistant(args, processor_cls, model_cls, run_prediction_loop
         num_samples=args.num_samples,
         temperature=args.temperature,
         assistant_model=assistant_model,
+        assistant_early_exit=assistant_early_exit,
         assistant_tokenizer=assistant_tokenizer
     )
     return new_outputs
