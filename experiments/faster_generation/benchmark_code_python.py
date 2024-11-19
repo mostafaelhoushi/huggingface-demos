@@ -27,9 +27,9 @@ def run_prediction_loop(model, tokenizer, num_samples, temperature=None, assista
         generate_kwargs = {
             "do_sample": False,
             "temperature": temperature,
-            "max_length": GEN_LEN,
+            "max_new_tokens": GEN_LEN,
             "assistant_model": assistant_model,
-            "assistant_early_exit", assistant_early_exit,
+            "assistant_early_exit": assistant_early_exit,
         }
         if temperature is not None:
             generate_kwargs["do_sample"] = True
