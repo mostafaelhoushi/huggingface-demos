@@ -118,12 +118,16 @@ def run_model_with_assistant(args, processor_cls, model_cls, run_prediction_loop
         model.generation_config.pad_token_id = model.generation_config.eos_token_id
 
     # If the tokenizer of the two models are different, pass `assistant_tokenizer` to trigger UAG
-    has_same_tokenizer = (
-        model.config.vocab_size == assistant_model.config.vocab_size
-        and model.config.pad_token_id == assistant_model.config.pad_token_id
-        and model.config.eos_token_id == assistant_model.config.eos_token_id
-        and model.config.bos_token_id == assistant_model.config.bos_token_id
-    )
+    if assistant_model:
+        has_same_tokenizer = (
+            model.config.vocab_size == assistant_model.config.vocab_size
+            and model.config.pad_token_id == assistant_model.config.pad_token_id
+            and model.config.eos_token_id == assistant_model.config.eos_token_id
+            and model.config.bos_token_id == assistant_model.config.bos_token_id
+        )
+    else:
+        has_same_tokenizer = True
+
     if has_same_tokenizer:
         assistant_tokenizer = None
     else:
